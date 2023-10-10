@@ -4,8 +4,8 @@
 #include<string.h>
 #include<ctype.h>
 #define YYSTYPE char*
-char idstr[50];
-char numstr[50];
+char idarr[50];
+char numarr[50];
 int yylex();
 extern int yyparse();
 FILE* yyin;
@@ -13,12 +13,12 @@ void yyerror(const char*s);
 %}
 %token NUMBER
 %token ID
-%token ADD SUB MUL DIV LKO RKO
-%left LKO
+%token ADD SUB MUL DIV LPAREN RPAREN
+%left LPAREN
 %left ADD SUB
 %left MUL DIV
 %right UMINUS
-%right RKO
+%right RPAREN
 %%
 
 lines : lines expr '\n'{printf("%s\n",$2);}
@@ -34,7 +34,8 @@ expr : expr ADD expr {$$=(char*)malloc(50*sizeof(char)); strcpy($$,$1);
                       strcat($$,$3);strcat($$,"*"); }
      | expr DIV expr {$$=(char*)malloc(50*sizeof(char)); strcpy($$,$1);
                       strcat($$,$3);strcat($$,"/"); }
-     | LKO expr RKO {$$=(char*)malloc(50*sizeof(char));strcpy($$,$2);}
+     | LPAREN expr RPAREN {$$=(char*)malloc(50*sizeof(char));
+                           strcpy($$,$2);}
      | NUMBER   {$$ = (char*)malloc(50*sizeof(char)); strcpy($$,$1);
                  strcat($$," ");}
      | ID   {$$=(char*)malloc(50*sizeof(char));
@@ -53,28 +54,16 @@ int yylex()
           else if((t>='0'&& t<='9')){
                    int ti=0;
                   while((t>='0'&& t<='9')){
-                  numstr[ti]=t;
+                  numarr[ti]=t;
                   t=getchar();
                   ti++;
                 }
-           numstr[ti]='\0';
-           yylval=numstr;
+           numarr[ti]='\0';
+           yylval=numarr;
            ungetc(t,stdin);
            return NUMBER;
          }
-      else if((t>='a'&&t<='z')||(t>='A'&&t<='Z')||(t=='_')){
-              int ti=0;
-              while((t>='a'&&t<='z')||(t>='A'&&t<='Z')
-                     ||(t=='_')||(t>='0'&& t<='9')){
-                      idstr[ti]=t;
-                      ti++;
-                      t=getchar();
-                  }
-               idstr[ti]='\0';
-               yylval=idstr;
-               ungetc(t,stdin);
-               return ID;
-             }
+      
        else 
           {
             switch(t)
@@ -88,9 +77,9 @@ int yylex()
               case '/':
                    return DIV;
               case'(':
-                   return LKO;
+                   return LPAREN;
               case')':
-                   return RKO;
+                   return RPAREN;
               default: 
                    return t;
             }
